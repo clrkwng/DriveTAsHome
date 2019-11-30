@@ -1,10 +1,10 @@
 import random
 
 def main():
-    generate_graphs(100, 50)
+    generate_graphs(200, 100)
 
 def generate_graphs(numVertices, numHomes):
-    f = open("inputs/100.in", "w+")
+    f = open("inputs/200.in", "w+")
 
     f.write(str(numVertices)+"\n")
     f.write(str(numHomes)+"\n")
@@ -36,12 +36,29 @@ def generate_graphs(numVertices, numHomes):
                 graph[i][j] = round(graph[i][j], 5)
 
     #adds x's in
+    startVertex = int(returnList[2][0][-1])
     for i in range(numVertices):
         for j in range(i, numVertices):
             xFactor = random.random()
-            if i == j or xFactor > 0.6:
+            if i == j:
                 graph[i][j] = 'x';
                 graph[j][i] = 'x';
+            if i == startVertex or j == startVertex:
+                if xFactor > 0.9:
+                    graph[i][j] = 'x';
+                    graph[j][i] = 'x';
+            elif xFactor > 0.3:
+                graph[i][j] = 'x';
+                graph[j][i] = 'x';
+
+    #removes 70% of direct edges from S to vertices in H
+    for i in returnList[1]:
+        h = int(i[-1])
+        randFactor = random.random()
+        if randFactor > 0.3:
+            graph[h][startVertex] = 'x'
+            graph[startVertex][h] = 'x'
+
 
     #write the graph in to the text file
     for i in range(numVertices):
@@ -49,27 +66,35 @@ def generate_graphs(numVertices, numHomes):
             f.write(str(graph[i][j]) + " ")
         f.write("\n")
 
-    #print('\n'.join([''.join(['{:9}'.format(item) for item in row]) for row in graph]))
+    edgeCount = 0
+    for i in range(numVertices):
+        for j in range(i, numVertices):
+            if graph[i][j] != 'x':
+                edgeCount += 1
+    print(edgeCount)
+
     f.close()
     return;
 
 
 def generate_vertices(numVertices, numHomes):
-    vertices = set()
+    verticesSet = set()
+    verticesList = []
     returnList = []
 
     for i in range(numVertices):
         vertex = 'x' + str(i)
-        vertices.add(vertex)
-    returnList.append(vertices)
+        verticesSet.add(vertex)
+        verticesList.append(vertex)
+    returnList.append(verticesList)
 
-    homes = random.sample(vertices, numHomes)
+    homes = random.sample(verticesSet, numHomes)
     returnList.append(homes)
 
     # for home in homes:
     #     print(home)
 
-    start = random.sample(vertices, 1)
+    start = random.sample(verticesSet, 1)
     returnList.append(start)
     # print(start)
     return returnList;

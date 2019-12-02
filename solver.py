@@ -4,8 +4,9 @@ sys.path.append('..')
 sys.path.append('../..')
 import argparse
 import utils
+import random
 
-from student_utils import *
+from DriveTAsHome.student_utils import *
 """
 ======================================================================
   Complete the following function.
@@ -25,48 +26,156 @@ def solve(list_of_locations, list_of_homes, starting_car_location, adjacency_mat
         A dictionary mapping drop-off location to a list of homes of TAs that got off at that particular location
         NOTE: both outputs should be in terms of indices not the names of the locations themselves
     """
+    G, msg = adjacency_matrix_to_graph(adjacency_matrix)
+    if msg != "":
+        #raise error as a location has a road to self
     temp = 100
-    size = 0
     ITERATIONS = 1000
     #find a random tour
+
+    FWdict = dict(nx.floyd_warshall(G))
+    best_tour = []
+    best_cost = 10000000
     for size in range(0, len(list_of_locations)):
-        tour = pick_random_tour(G, size)
+        tour = get_two_tours(adjacency_matrix, starting_car_location, size)
+        tour1_cost = cost_of_cycle(list_of_homes, G, tour[0], FWdict)
+        tour2_cost = cost_of_cycle(list_of_homes, G, tour[1], FWdict)
+        if tour1_cost <= tour2_cost:
+            tour = tour[0]
+        else:
+            tour = tour[1]
         for _ in range(ITERATIONS):
-            toSwapOne = randint(0, len(locations) - 1)
-            if toSwapOne in tour:
-                toSwapTwo = randint(0, len(locations) - 1)
-                if toSwapTwo in tour:
-                    aIndex = tour.index(toSwapOne)
-                    bIndex = tour.index(toSwapTwo)
-                    tour[aIndex] = toSwapTwo
-                    tour[bIndex] = toSwapOne
-                else:
-                    bIndex = randint(0, len(tour) - 1)
-                    tour[aIndex] = tour[bIndex]
-                    tour[bIndex] = toSwapOne
-            else:
-                bIndex = randint(0, len(tour) - 1)
-                tour[aIndex] = tour[bIndex]
-                tour[bIndex] = toSwapOne 
-            #randomly pick two vertices, and update the tour
+            tour = swap_function
+            # toSwapOne = randint(0, len(locations) - 1)
+            # if toSwapOne in tour:
+            #     toSwapTwo = randint(0, len(locations) - 1)
+            #     if toSwapTwo in tour:
+            #         aIndex = tour.index(toSwapOne)
+            #         bIndex = tour.index(toSwapTwo)
+            #         tour[aIndex] = toSwapTwo
+            #         tour[bIndex] = toSwapOne
+            #     else:
+            #         bIndex = randint(0, len(tour) - 1)
+            #         tour[aIndex] = tour[bIndex]
+            #         tour[bIndex] = toSwapOne
+            # else:
+            #     bIndex = randint(0, len(tour) - 1)
+            #     tour[aIndex] = tour[bIndex]
+            #     tour[bIndex] = toSwapOne
+            # #randomly pick two vertices, and update the tour
+            temp_cost = cost_of_cycle(list_of_homes, G, tour, FWdict)
+            if temp_cost <= best_cost:
+                #switch based on temperature?
+                best_cost = temp_cost
+                best_tour = tour
+    dropoff_mapping = drop_off_given_path(best_tour, list_of_homes, FWdict)
+    return best_tour, dropoff_mapping
+
     pass
 
-def cost_of_cycle(list_of_homes, G, car_cycle):
-    shortest = dict(nx.floyd_warshall(G))
-    dropoff_mapping = [[] for _ in range(len(G))]
-    for h in list_of_homes:
-        currMin = 100000000000000000
-        closestDropoff = -1
-        for c in car_cycle:
-            if shortest[c][h] < currMin:
-                currMin = shortest[c][h]
-                closestDropoff = c
-        dropoff_mapping[closestDropoff].append(h)
+def cost_of_cycle(list_of_homes, G, car_cycle, FWdict):
+    dropoff_mapping = drop_off_given_path(car_cycle, list_of_homes, FWdict)
     return cost_of_solution(G, car_cycle, dropoff_mapping)
-        
-        
-def pick_random_tour(G, size_of_cycle):
-    pass
+
+def get_neighbors(v, adj_matrix):
+    lst = []
+    for i in range(len(adj_matrix[v])):
+        if adj_matrix[v][i] != 'x':
+            lst.append(i)
+    return lst
+
+#returns a tour with repeated vertices
+def pick_tour_with_repeats(starting_car_location, adj_matrix, all_paths, length):
+    path = []
+    pick_tour_with_repeats_helper(adj_matrix, length, starting_car_location, starting_car_location, path, all_paths)
+
+def pick_tour_with_repeats_helper(adj_matrix, length, v, starting_car_location, path, all_paths):
+    if length == -1 and v == starting_car_location:
+        all_paths.append(path)
+        return
+    elif length == -1:
+        return
+
+    neighbors = get_neighbors(v, adj_matrix)
+    random.shuffle(neighbors)
+
+    for u in neighbors:
+        path.append(u)
+        pick_tour_with_repeats_helper(adj_matrix, length - 1, u, starting_car_location, path, all_paths)
+        if len(all_paths) != 0:
+            return
+        path.pop()
+
+#returns a tour with no repeated vertices
+def pick_tour_without_repeats(starting_car_location, adj_matrix, all_paths, length):
+    path = []
+    visited = set([starting_car_location])
+    pick_tour_without_repeats_helper(adj_matrix, length, starting_car_location, starting_car_location, path, all_paths, visited)
+
+def pick_tour_without_repeats_helper(adj_matrix, length, v, starting_car_location, path, all_paths, visited):
+    if length == -1 and v == starting_car_location:
+        if len(set(path)) == len(path):
+            all_paths.append(path)
+            return
+        else:
+            return
+    elif length == -1:
+        return
+
+    neighbors = get_neighbors(v, adj_matrix)
+    random.shuffle(neighbors)
+
+    for u in neighbors:
+        if length == 0 or u not in visited:
+            path.append(u)
+            visited.add(u)
+            pick_tour_without_repeats_helper(adj_matrix, length - 1, u, starting_car_location, path, all_paths, visited)
+            if len(all_paths) != 0:
+                return
+            if u in visited:
+                visited.remove(u)
+            path.pop()
+
+#returns a list of two tours: one with repeats, and one without repeats
+def get_two_tours(adj_matrix, starting_car_location, length):
+    path = []
+    pick_tour_with_repeats(starting_car_location, adj_matrix, path, length)
+
+    if len(path) != 0:
+        path[0].insert(0, starting_car_location)
+    else:
+        path.append([starting_car_location])
+
+    path2 = []
+    pick_tour_without_repeats(starting_car_location, adj_matrix, path2, length)
+    if len(path2) != 0:
+        path2[0].insert(0, starting_car_location)
+    else:
+        path2.append([starting_car_location])
+
+    return [path[0], path2[0]]
+
+
+def drop_off_given_path(path, homes, FWdict):
+    vert_dict = {}
+    total_dist = 0
+    for vert in path:
+        vert_dict[vert] = []
+    for home in homes:
+        best_dist = 10000000
+        best_vert = 0
+        for vert in path:
+            temp_dist = FWdict[vert, home]
+            if temp_dist < best_dist:
+                best_vert = vert
+                best_dist = temp_dist
+        vert_dict[best_vert].append(home)
+    final_dict = {}
+    for vert in path:
+        if vert_dict[vert] != []:
+            final_dict[vert] = vert_dict[vert]
+    return final_dict
+
 """
 ======================================================================
    No need to change any code below this line

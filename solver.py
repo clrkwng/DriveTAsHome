@@ -176,6 +176,58 @@ def drop_off_given_path(path, homes, FWdict):
             final_dict[vert] = vert_dict[vert]
     return final_dict
 
+def switch_vertex(G, tour):
+    """
+    Input:
+        G: Original Graph
+        tour: List of
+
+    Output:
+        Generate a new tour where two of the vertices are switched
+    """
+    noOfSwitchableVertices = len(tour) - 1
+
+    indices = list(range(1, noOfSwitchableVertices))
+    shuffle(indices)
+
+    for index in indices:
+        neighbors0 = G.neighbors(tour[index - 1])
+        neighbors1 = G.neighbors(tour[index + 1])
+
+        common = [vertex for vertex in neighbors0 if vertex in neighbors2]
+        if len(common) > 0:
+             tour[index] = random.choice(common)
+             return tour
+
+    return tour
+
+
+def switch_edges(G, tour):
+    #find appropriate switches
+    #find two pairs of cosecutive vertices
+    #check to see if x1 connects to y1 and x2 connects to y2
+    #have to translate that into the tour
+    # tour now goes from s -> x1 -> reverse[x2:y1] -> y2 -> s
+
+    noOfSwitchableVertices = len(tour) - 1
+
+    indices = list(range(1, noOfSwitchableVertices))
+    shuffle(indices)
+
+    #need to check if it's greater than 4?
+
+    for x in range(len(indices)):
+        edge1 = G.has_edge(tour[indices[x]], tour[indices[x+1]])
+        edge2 = G.has_edge(tour[indices[x] + 1], tour[indices[x+1] + 1])
+
+        if edge1 and edge2:
+            min = min(indices[x], indices[x+1])
+            max = max(indices[x], indices[x+1])
+
+            tour = tour[:min + 1] + tour[min + 1: max].reverse() + tour[max + 1:]
+
+    return tour 
+
 """
 ======================================================================
    No need to change any code below this line

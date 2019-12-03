@@ -33,7 +33,7 @@ def solve(list_of_locations, list_of_homes, starting_car_location, adjacency_mat
     #     return
     #raise error as a location has a road to self
     coolingRate = 0.97
-    ITERATIONS = 10
+    ITERATIONS = 1000
     temp_original = 10000
 
     FWdict = nx.floyd_warshall(G)
@@ -45,7 +45,7 @@ def solve(list_of_locations, list_of_homes, starting_car_location, adjacency_mat
     list_of_homes = convert_locations_to_indices(list_of_homes, list_of_locations)
     list_of_locations = convert_locations_to_indices(list_of_locations, list_of_locations)
 
-    for size in range(0, len(list_of_locations)//2):
+    for size in range(0, len(list_of_locations)):
         temp = temp_original
 
         tour = get_two_tours(adjacency_matrix, starting_car_location, size)
@@ -86,7 +86,7 @@ def solve(list_of_locations, list_of_homes, starting_car_location, adjacency_mat
 
 def cost_of_cycle(list_of_homes, G, car_cycle, FWdict):
     dropoff_mapping = drop_off_given_path(car_cycle, list_of_homes, FWdict)
-    ret, msg = cost_of_solution(G, car_cycle, dropoff_mapping)
+    ret, msg = cost_of_solution(G, car_cycle, dropoff_mapping, FWdict)
     return ret
 
 def get_neighbors(v, adj_matrix):

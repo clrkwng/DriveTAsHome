@@ -27,8 +27,8 @@ def solve(list_of_locations, list_of_homes, starting_car_location, adjacency_mat
         NOTE: both outputs should be in terms of indices not the names of the locations themselves
     """
     G, msg = adjacency_matrix_to_graph(adjacency_matrix)
-    if msg != "":
-        #raise error as a location has a road to self
+    #if msg != "":
+    #raise error as a location has a road to self
     temp = 100
     ITERATIONS = 1000
     #find a random tour
@@ -175,6 +175,91 @@ def drop_off_given_path(path, homes, FWdict):
         if vert_dict[vert] != []:
             final_dict[vert] = vert_dict[vert]
     return final_dict
+
+def switch_vertex(G, tour):
+    """
+    Input:
+        G: Original Graph
+        tour: List of
+    Output:
+        Generate a new tour where two of the vertices are switched
+    """
+    noOfSwitchableVertices = len(tour) - 1
+
+    indices = list(range(1, noOfSwitchableVertices))
+    random.shuffle(indices)
+
+    for index in indices:
+        neighbors0 = G.neighbors(tour[index - 1])
+        neighbors1 = G.neighbors(tour[index + 1])
+
+        common = [vertex for vertex in neighbors0 if vertex in neighbors1]
+        if len(common) > 0:
+            tour[index] = random.choice(common)
+            return tour
+
+    return tour
+
+
+def switch_edges(G, tour):
+    #find appropriate switches
+    #find two pairs of cosecutive vertices
+    #check to see if x1 connects to y1 and x2 connects to y2
+    #have to translate that into the tour
+    # tour now goes from s -> x1 -> reverse[x2:y1] -> y2 -> s
+
+    noOfSwitchableVertices = len(tour) - 1
+
+    indices = list(range(1, noOfSwitchableVertices))
+    random.shuffle(indices)
+
+    #need to check if it's greater than 4?
+
+    for x in range(len(indices) - 1):
+        edge1 = G.has_edge(tour[indices[x]], tour[indices[x+1]])
+        edge2 = G.has_edge(tour[indices[x] + 1], tour[indices[x+1] + 1])
+
+        if edge1 and edge2:
+            x1 = min(indices[x], indices[x+1])
+            y1 = max(indices[x], indices[x+1])
+
+            first = tour[:x1 + 1]
+            reverse = tour[x1 + 1: y1 + 1]
+            reverse = reverse[::-1]
+            end = tour[y1 + 1:]
+
+            new_tour = first + reverse + end
+
+    return new_tour
+
+def main():
+    adj_matrix = [
+        ['x', 2.88966, 'x', 'x', 3.78423, 'x', 'x', 'x', 'x', 'x'],
+        [2.88966, 'x', 4.17414, 6.25644, 3.1229, 'x', 2.69494, 5.35798, 'x', 'x'],
+        ['x', 4.17414, 'x', 'x', 'x', 2.02081, 'x', 'x', 'x', 'x'],
+        ['x', 6.25644, 'x', 'x', 'x', 'x', 'x', 'x', 'x', 2.07271],
+        [3.78423, 3.1229, 'x', 'x', 'x', 0.96957, 3.36051, 'x', 1.82842, 'x'],
+        ['x', 'x', 2.02081, 'x', 0.96957, 'x', 'x', 4.50784, 'x', 'x'],
+        ['x', 2.69494, 'x', 'x', 3.36051, 'x', 'x', 'x', 3.98942, 'x'],
+        ['x', 5.35798, 'x', 'x', 'x', 4.50784, 'x', 'x', 4.96827, 'x'],
+        ['x', 'x', 'x', 'x', 1.82842, 'x', 3.98942, 4.96827, 'x', 5.47821],
+        ['x', 'x', 'x', 2.07271, 'x', 'x', 'x', 'x', 5.47821, 'x']
+    ]
+
+    starting_car_location = 1
+
+    #length is the number of vertices visited, excluding starting_car_location
+    length = 5
+
+    #paths[0] is tour with repeats, paths[1] is tour without repeats
+    G, msg = adjacency_matrix_to_graph(adj_matrix)
+    paths = get_two_tours(adj_matrix, starting_car_location, length)
+    print('Tour with repeats: ' + str(paths[0]))
+    print('Tour without repeats: ' + str(paths[1]))
+    print(switch_vertex(G, paths[0]))
+    print(switch_edges(G, paths[0]))
+
+main()
 
 """
 ======================================================================

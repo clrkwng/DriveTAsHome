@@ -5,6 +5,7 @@ sys.path.append('../..')
 import argparse
 import utils
 import random
+import math
 
 from DriveTAsHome.student_utils import *
 """
@@ -27,15 +28,18 @@ def solve(list_of_locations, list_of_homes, starting_car_location, adjacency_mat
         NOTE: both outputs should be in terms of indices not the names of the locations themselves
     """
     G, msg = adjacency_matrix_to_graph(adjacency_matrix)
-    #if msg != "":
+    # if msg != "":
+    #     return
     #raise error as a location has a road to self
     temp = 100
+    coolingRate = 0.97
     ITERATIONS = 1000
     #find a random tour
 
-    FWdict = dict(nx.floyd_warshall(G))
+    FWdict = nx.floyd_warshall(G)
     best_tour = []
     best_cost = 10000000
+
     for size in range(0, len(list_of_locations)):
         tour = get_two_tours(adjacency_matrix, starting_car_location, size)
         tour1_cost = cost_of_cycle(list_of_homes, G, tour[0], FWdict)
@@ -44,38 +48,27 @@ def solve(list_of_locations, list_of_homes, starting_car_location, adjacency_mat
             tour = tour[0]
         else:
             tour = tour[1]
+
         for _ in range(ITERATIONS):
-            tour = swap_function
-            # toSwapOne = randint(0, len(locations) - 1)
-            # if toSwapOne in tour:
-            #     toSwapTwo = randint(0, len(locations) - 1)
-            #     if toSwapTwo in tour:
-            #         aIndex = tour.index(toSwapOne)
-            #         bIndex = tour.index(toSwapTwo)
-            #         tour[aIndex] = toSwapTwo
-            #         tour[bIndex] = toSwapOne
-            #     else:
-            #         bIndex = randint(0, len(tour) - 1)
-            #         tour[aIndex] = tour[bIndex]
-            #         tour[bIndex] = toSwapOne
-            # else:
-            #     bIndex = randint(0, len(tour) - 1)
-            #     tour[aIndex] = tour[bIndex]
-            #     tour[bIndex] = toSwapOne
-            # #randomly pick two vertices, and update the tour
+            tour = switch_vertex(G, tour)
+            tour = switch_edges(G, tour)
             temp_cost = cost_of_cycle(list_of_homes, G, tour, FWdict)
-            if temp_cost <= best_cost:
+            change_cost = temp_cost - best_cost
+            if change_cost < 0:
                 #switch based on temperature?
                 best_cost = temp_cost
                 best_tour = tour
+            elif random.random() < math.exp(-(change_cost/temp)):
+                best_cost = temp_cost
+                best_tour = tour
+            temp *= coolingRate
     dropoff_mapping = drop_off_given_path(best_tour, list_of_homes, FWdict)
-    return best_tour, dropoff_mapping
-
-    pass
+    return best_tour, dropoff_mapping, best_cost
 
 def cost_of_cycle(list_of_homes, G, car_cycle, FWdict):
     dropoff_mapping = drop_off_given_path(car_cycle, list_of_homes, FWdict)
-    return cost_of_solution(G, car_cycle, dropoff_mapping)
+    ret, msg = cost_of_solution(G, car_cycle, dropoff_mapping)
+    return ret
 
 def get_neighbors(v, adj_matrix):
     lst = []
@@ -165,7 +158,7 @@ def drop_off_given_path(path, homes, FWdict):
         best_dist = 10000000
         best_vert = 0
         for vert in path:
-            temp_dist = FWdict[vert, home]
+            temp_dist = FWdict[vert][home]
             if temp_dist < best_dist:
                 best_vert = vert
                 best_dist = temp_dist
@@ -228,9 +221,9 @@ def switch_edges(G, tour):
             reverse = reverse[::-1]
             end = tour[y1 + 1:]
 
-            new_tour = first + reverse + end
+            tour = first + reverse + end
 
-    return new_tour
+    return tour
 
 def main():
     adj_matrix = [
@@ -252,14 +245,21 @@ def main():
     length = 5
 
     #paths[0] is tour with repeats, paths[1] is tour without repeats
-    G, msg = adjacency_matrix_to_graph(adj_matrix)
-    paths = get_two_tours(adj_matrix, starting_car_location, length)
-    print('Tour with repeats: ' + str(paths[0]))
-    print('Tour without repeats: ' + str(paths[1]))
-    print(switch_vertex(G, paths[0]))
-    print(switch_edges(G, paths[0]))
+    # G, msg = adjacency_matrix_to_graph(adj_matrix)
+    # paths = get_two_tours(adj_matrix, starting_car_location, length)
+    # print('Tour with repeats: ' + str(paths[0]))
+    # print('Tour without repeats: ' + str(paths[1]))
+    # print(switch_vertex(G, paths[0]))
+    # print(switch_edges(G, paths[0]))
+    list_of_homes = [0, 4, 5, 8]
+    list_of_locations = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+    tour, dropoff_location, cost = solve(list_of_locations, list_of_homes, 1, adj_matrix)
+    print(tour)
+    print(dropoff_location)
+    print(cost)
 
 main()
+
 
 """
 ======================================================================
@@ -311,17 +311,17 @@ def solve_all(input_directory, output_directory, params=[]):
         solve_from_file(input_file, output_directory, params=params)
 
 
-if __name__=="__main__":
-    parser = argparse.ArgumentParser(description='Parsing arguments')
-    parser.add_argument('--all', action='store_true', help='If specified, the solver is run on all files in the input directory. Else, it is run on just the given input file')
-    parser.add_argument('input', type=str, help='The path to the input file or directory')
-    parser.add_argument('output_directory', type=str, nargs='?', default='.', help='The path to the directory where the output should be written')
-    parser.add_argument('params', nargs=argparse.REMAINDER, help='Extra arguments passed in')
-    args = parser.parse_args()
-    output_directory = args.output_directory
-    if args.all:
-        input_directory = args.input
-        solve_all(input_directory, output_directory, params=args.params)
-    else:
-        input_file = args.input
-        solve_from_file(input_file, output_directory, params=args.params)
+# if __name__=="__main__":
+#     parser = argparse.ArgumentParser(description='Parsing arguments')
+#     parser.add_argument('--all', action='store_true', help='If specified, the solver is run on all files in the input directory. Else, it is run on just the given input file')
+#     parser.add_argument('input', type=str, help='The path to the input file or directory')
+#     parser.add_argument('output_directory', type=str, nargs='?', default='.', help='The path to the directory where the output should be written')
+#     parser.add_argument('params', nargs=argparse.REMAINDER, help='Extra arguments passed in')
+#     args = parser.parse_args()
+#     output_directory = args.output_directory
+#     if args.all:
+#         input_directory = args.input
+#         solve_all(input_directory, output_directory, params=args.params)
+#     else:
+#         input_file = args.input
+#         solve_from_file(input_file, output_directory, params=args.params)

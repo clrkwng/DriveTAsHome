@@ -6,6 +6,7 @@ import argparse
 import utils
 import random
 import math
+import time
 
 from student_utils import *
 """
@@ -32,7 +33,7 @@ def solve(list_of_locations, list_of_homes, starting_car_location, adjacency_mat
     #     return
     #raise error as a location has a road to self
     coolingRate = 0.97
-    ITERATIONS = 7
+    ITERATIONS = 10
     temp_original = 10000
 
     FWdict = nx.floyd_warshall(G)
@@ -48,6 +49,9 @@ def solve(list_of_locations, list_of_homes, starting_car_location, adjacency_mat
         temp = temp_original
 
         tour = get_two_tours(adjacency_matrix, starting_car_location, size)
+        if not tour:
+            print("gay")
+            continue
         tour1_cost = cost_of_cycle(list_of_homes, G, tour[0], FWdict)
         tour2_cost = cost_of_cycle(list_of_homes, G, tour[1], FWdict)
 
@@ -94,11 +98,11 @@ def get_neighbors(v, adj_matrix):
     return lst
 
 #returns a tour with repeated vertices
-def pick_tour_with_repeats(starting_car_location, adj_matrix, all_paths, length):
+def pick_tour_with_repeats(starting_car_location, adj_matrix, all_paths, length, timer):
     path = []
-    pick_tour_with_repeats_helper(adj_matrix, length, starting_car_location, starting_car_location, path, all_paths)
+    pick_tour_with_repeats_helper(adj_matrix, length, starting_car_location, starting_car_location, path, all_paths, timer)
 
-def pick_tour_with_repeats_helper(adj_matrix, length, v, starting_car_location, path, all_paths):
+def pick_tour_with_repeats_helper(adj_matrix, length, v, starting_car_location, path, all_paths, timer):
     if length == -1 and v == starting_car_location:
         all_paths.append(path)
         return
@@ -110,18 +114,21 @@ def pick_tour_with_repeats_helper(adj_matrix, length, v, starting_car_location, 
 
     for u in neighbors:
         path.append(u)
-        pick_tour_with_repeats_helper(adj_matrix, length - 1, u, starting_car_location, path, all_paths)
+        curr = time.time()
+        if (curr - timer) > 5:
+            return []
+        pick_tour_with_repeats_helper(adj_matrix, length - 1, u, starting_car_location, path, all_paths, timer)
         if len(all_paths) != 0:
             return
         path.pop()
 
 #returns a tour with no repeated vertices
-def pick_tour_without_repeats(starting_car_location, adj_matrix, all_paths, length):
+def pick_tour_without_repeats(starting_car_location, adj_matrix, all_paths, length, timer):
     path = []
     visited = set([starting_car_location])
-    pick_tour_without_repeats_helper(adj_matrix, length, starting_car_location, starting_car_location, path, all_paths, visited)
+    pick_tour_without_repeats_helper(adj_matrix, length, starting_car_location, starting_car_location, path, all_paths, visited, timer)
 
-def pick_tour_without_repeats_helper(adj_matrix, length, v, starting_car_location, path, all_paths, visited):
+def pick_tour_without_repeats_helper(adj_matrix, length, v, starting_car_location, path, all_paths, visited, timer):
     if length == -1 and v == starting_car_location:
         # if len(set(path)) == len(path):
         #     all_paths.append(path)
@@ -140,7 +147,10 @@ def pick_tour_without_repeats_helper(adj_matrix, length, v, starting_car_locatio
         if length == 0 or u not in visited:
             path.append(u)
             visited.add(u)
-            pick_tour_without_repeats_helper(adj_matrix, length - 1, u, starting_car_location, path, all_paths, visited)
+            curr = time.time()
+            if (curr - timer) > 5:
+                return []
+            pick_tour_without_repeats_helper(adj_matrix, length - 1, u, starting_car_location, path, all_paths, visited, timer)
             if len(all_paths) != 0:
                 return
             if u in visited:
@@ -150,7 +160,8 @@ def pick_tour_without_repeats_helper(adj_matrix, length, v, starting_car_locatio
 #returns a list of two tours: one with repeats, and one without repeats
 def get_two_tours(adj_matrix, starting_car_location, length):
     path = []
-    pick_tour_with_repeats(starting_car_location, adj_matrix, path, length)
+    start = time.time()
+    pick_tour_with_repeats(starting_car_location, adj_matrix, path, length, start)
 
     if len(path) != 0:
         path[0].insert(0, starting_car_location)
@@ -158,7 +169,8 @@ def get_two_tours(adj_matrix, starting_car_location, length):
         path.append([starting_car_location])
 
     path2 = []
-    pick_tour_without_repeats(starting_car_location, adj_matrix, path2, length)
+    start = time.time()
+    pick_tour_without_repeats(starting_car_location, adj_matrix, path2, length, start)
     if len(path2) != 0:
         path2[0].insert(0, starting_car_location)
     else:

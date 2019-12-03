@@ -74,7 +74,7 @@ def solve(list_of_locations, list_of_homes, starting_car_location, adjacency_mat
             global_best_tour = local_best_tour
             global_best_cost = local_best_cost
 
-        print(size + " : " + global_best_cost)
+        print(str(size) + " : " + str(global_best_cost))
 
     dropoff_mapping = drop_off_given_path(global_best_tour, list_of_homes, FWdict)
     return global_best_tour, dropoff_mapping

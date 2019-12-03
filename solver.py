@@ -8,7 +8,7 @@ import random
 import math
 import time
 
-from student_utils import *
+from DriveTAsHome.student_utils import *
 """
 ======================================================================
   Complete the following function.
@@ -45,7 +45,7 @@ def solve(list_of_locations, list_of_homes, starting_car_location, adjacency_mat
     list_of_homes = convert_locations_to_indices(list_of_homes, list_of_locations)
     list_of_locations = convert_locations_to_indices(list_of_locations, list_of_locations)
 
-    for size in range(0, len(list_of_locations)):
+    for size in range(0, len(list_of_locations)//2):
         temp = temp_original
 
         tour = get_two_tours(adjacency_matrix, starting_car_location, size)

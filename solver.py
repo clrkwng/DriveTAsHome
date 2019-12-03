@@ -33,7 +33,7 @@ def solve(list_of_locations, list_of_homes, starting_car_location, adjacency_mat
     #     return
     #raise error as a location has a road to self
     coolingRate = 0.97
-    ITERATIONS = 1000
+    ITERATIONS = 100
     temp_original = 10000
 
     FWdict = nx.floyd_warshall(G)
@@ -180,12 +180,11 @@ def get_two_tours(adj_matrix, starting_car_location, length):
 
 def drop_off_given_path(path, homes, FWdict):
     vert_dict = {}
-    total_dist = 0
     for vert in path:
         vert_dict[vert] = []
     for home in homes:
-        best_dist = 10000000
-        best_vert = 0
+        best_dist = 10000000000000000
+        best_vert = path[0]
         for vert in path:
             temp_dist = FWdict[vert][home]
             if temp_dist < best_dist:

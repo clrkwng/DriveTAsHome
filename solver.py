@@ -50,7 +50,6 @@ def solve(list_of_locations, list_of_homes, starting_car_location, adjacency_mat
 
         tour = get_two_tours(adjacency_matrix, starting_car_location, size)
         if not tour:
-            print("gay")
             continue
         tour1_cost = cost_of_cycle(list_of_homes, G, tour[0], FWdict)
         tour2_cost = cost_of_cycle(list_of_homes, G, tour[1], FWdict)

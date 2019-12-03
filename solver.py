@@ -63,7 +63,7 @@ def solve(list_of_locations, list_of_homes, starting_car_location, adjacency_mat
                 best_tour = tour
             temp *= coolingRate
     dropoff_mapping = drop_off_given_path(best_tour, list_of_homes, FWdict)
-    return best_tour, dropoff_mapping, best_cost
+    return best_tour, dropoff_mapping
 
 def cost_of_cycle(list_of_homes, G, car_cycle, FWdict):
     dropoff_mapping = drop_off_given_path(car_cycle, list_of_homes, FWdict)
@@ -253,10 +253,9 @@ def main():
     # print(switch_edges(G, paths[0]))
     list_of_homes = [0, 4, 5, 8]
     list_of_locations = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
-    tour, dropoff_location, cost = solve(list_of_locations, list_of_homes, 1, adj_matrix)
+    tour, dropoff_location = solve(list_of_locations, list_of_homes, 1, adj_matrix)
     print(tour)
     print(dropoff_location)
-    print(cost)
 
 main()
 

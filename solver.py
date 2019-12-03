@@ -31,16 +31,23 @@ def solve(list_of_locations, list_of_homes, starting_car_location, adjacency_mat
     # if msg != "":
     #     return
     #raise error as a location has a road to self
-    temp = 100
     coolingRate = 0.97
-    ITERATIONS = 1000
+    ITERATIONS = 10000
     #find a random tour
+    temp_original = 10000
 
     FWdict = nx.floyd_warshall(G)
-    best_tour = []
-    best_cost = 10000000
+    global_best_tour = []
+    global_best_cost = 10000000000000000000
+    local_best_tour = global_best_tour
+    local_best_cost = global_best_cost
+    starting_car_location = convert_locations_to_indices([starting_car_location], list_of_locations)[0]
+    list_of_homes = convert_locations_to_indices(list_of_homes, list_of_locations)
+    list_of_locations = convert_locations_to_indices(list_of_locations, list_of_locations)
 
     for size in range(0, len(list_of_locations)):
+        temp = temp_original
+
         tour = get_two_tours(adjacency_matrix, starting_car_location, size)
         tour1_cost = cost_of_cycle(list_of_homes, G, tour[0], FWdict)
         tour2_cost = cost_of_cycle(list_of_homes, G, tour[1], FWdict)
@@ -49,21 +56,28 @@ def solve(list_of_locations, list_of_homes, starting_car_location, adjacency_mat
         else:
             tour = tour[1]
 
-        for _ in range(ITERATIONS):
+        for i in range(ITERATIONS):
             tour = switch_vertex(G, tour)
             tour = switch_edges(G, tour)
             temp_cost = cost_of_cycle(list_of_homes, G, tour, FWdict)
-            change_cost = temp_cost - best_cost
+            change_cost = temp_cost - local_best_cost
             if change_cost < 0:
                 #switch based on temperature?
-                best_cost = temp_cost
-                best_tour = tour
+                local_best_cost = temp_cost
+                local_best_tour = tour
             elif random.random() < math.exp(-(change_cost/temp)):
-                best_cost = temp_cost
-                best_tour = tour
+                local_best_cost = temp_cost
+                local_best_tour = tour
             temp *= coolingRate
-    dropoff_mapping = drop_off_given_path(best_tour, list_of_homes, FWdict)
-    return best_tour, dropoff_mapping
+
+        if local_best_cost < global_best_cost:
+            global_best_tour = local_best_tour
+            global_best_cost = local_best_cost
+
+        print(global_best_cost)
+
+    dropoff_mapping = drop_off_given_path(global_best_tour, list_of_homes, FWdict)
+    return global_best_tour, dropoff_mapping
 
 def cost_of_cycle(list_of_homes, G, car_cycle, FWdict):
     dropoff_mapping = drop_off_given_path(car_cycle, list_of_homes, FWdict)
@@ -310,17 +324,17 @@ def solve_all(input_directory, output_directory, params=[]):
         solve_from_file(input_file, output_directory, params=params)
 
 
-# if __name__=="__main__":
-#     parser = argparse.ArgumentParser(description='Parsing arguments')
-#     parser.add_argument('--all', action='store_true', help='If specified, the solver is run on all files in the input directory. Else, it is run on just the given input file')
-#     parser.add_argument('input', type=str, help='The path to the input file or directory')
-#     parser.add_argument('output_directory', type=str, nargs='?', default='.', help='The path to the directory where the output should be written')
-#     parser.add_argument('params', nargs=argparse.REMAINDER, help='Extra arguments passed in')
-#     args = parser.parse_args()
-#     output_directory = args.output_directory
-#     if args.all:
-#         input_directory = args.input
-#         solve_all(input_directory, output_directory, params=args.params)
-#     else:
-#         input_file = args.input
-#         solve_from_file(input_file, output_directory, params=args.params)
+if __name__=="__main__":
+    parser = argparse.ArgumentParser(description='Parsing arguments')
+    parser.add_argument('--all', action='store_true', help='If specified, the solver is run on all files in the input directory. Else, it is run on just the given input file')
+    parser.add_argument('input', type=str, help='The path to the input file or directory')
+    parser.add_argument('output_directory', type=str, nargs='?', default='.', help='The path to the directory where the output should be written')
+    parser.add_argument('params', nargs=argparse.REMAINDER, help='Extra arguments passed in')
+    args = parser.parse_args()
+    output_directory = args.output_directory
+    if args.all:
+        input_directory = args.input
+        solve_all(input_directory, output_directory, params=args.params)
+    else:
+        input_file = args.input
+        solve_from_file(input_file, output_directory, params=args.params)

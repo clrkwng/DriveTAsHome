@@ -32,13 +32,13 @@ def solve(list_of_locations, list_of_homes, starting_car_location, adjacency_mat
     #     return
     #raise error as a location has a road to self
     coolingRate = 0.97
-    ITERATIONS = 10000
+    ITERATIONS = 100
     #find a random tour
-    temp_original = 10000
+    temp_original = 1000
 
     FWdict = nx.floyd_warshall(G)
     global_best_tour = []
-    global_best_cost = 10000000000000000000
+    global_best_cost = 10000000000000000000000000000000000000000000000000000000000000000000
     local_best_tour = global_best_tour
     local_best_cost = global_best_cost
     starting_car_location = convert_locations_to_indices([starting_car_location], list_of_locations)[0]
@@ -74,7 +74,7 @@ def solve(list_of_locations, list_of_homes, starting_car_location, adjacency_mat
             global_best_tour = local_best_tour
             global_best_cost = local_best_cost
 
-        print(global_best_cost)
+        print(size + " : " + global_best_cost)
 
     dropoff_mapping = drop_off_given_path(global_best_tour, list_of_homes, FWdict)
     return global_best_tour, dropoff_mapping

@@ -7,7 +7,7 @@ import utils
 import random
 import math
 
-from DriveTAsHome.student_utils import *
+from student_utils import *
 """
 ======================================================================
   Complete the following function.
@@ -32,9 +32,8 @@ def solve(list_of_locations, list_of_homes, starting_car_location, adjacency_mat
     #     return
     #raise error as a location has a road to self
     coolingRate = 0.97
-    ITERATIONS = 100
-    #find a random tour
-    temp_original = 1000
+    ITERATIONS = 7
+    temp_original = 10000
 
     FWdict = nx.floyd_warshall(G)
     global_best_tour = []
@@ -51,6 +50,7 @@ def solve(list_of_locations, list_of_homes, starting_car_location, adjacency_mat
         tour = get_two_tours(adjacency_matrix, starting_car_location, size)
         tour1_cost = cost_of_cycle(list_of_homes, G, tour[0], FWdict)
         tour2_cost = cost_of_cycle(list_of_homes, G, tour[1], FWdict)
+
         if tour1_cost <= tour2_cost:
             tour = tour[0]
         else:
@@ -59,15 +59,17 @@ def solve(list_of_locations, list_of_homes, starting_car_location, adjacency_mat
         for i in range(ITERATIONS):
             tour = switch_vertex(G, tour)
             tour = switch_edges(G, tour)
-            temp_cost = cost_of_cycle(list_of_homes, G, tour, FWdict)
-            change_cost = temp_cost - local_best_cost
+            curr_cost = cost_of_cycle(list_of_homes, G, tour, FWdict)
+            change_cost = curr_cost - local_best_cost
+
             if change_cost < 0:
                 #switch based on temperature?
-                local_best_cost = temp_cost
+                local_best_cost = curr_cost
                 local_best_tour = tour
             elif random.random() < math.exp(-(change_cost/temp)):
-                local_best_cost = temp_cost
+                local_best_cost = curr_cost
                 local_best_tour = tour
+
             temp *= coolingRate
 
         if local_best_cost < global_best_cost:
@@ -121,11 +123,13 @@ def pick_tour_without_repeats(starting_car_location, adj_matrix, all_paths, leng
 
 def pick_tour_without_repeats_helper(adj_matrix, length, v, starting_car_location, path, all_paths, visited):
     if length == -1 and v == starting_car_location:
-        if len(set(path)) == len(path):
-            all_paths.append(path)
-            return
-        else:
-            return
+        # if len(set(path)) == len(path):
+        #     all_paths.append(path)
+        #     return
+        # else:
+        #     return
+        all_paths.append(path)
+        return
     elif length == -1:
         return
 

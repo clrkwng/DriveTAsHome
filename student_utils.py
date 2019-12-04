@@ -73,7 +73,7 @@ car_cycle is the cycle of the car in terms of indices.
 dropoff_mapping is a dictionary of dropoff location to list of TAs that got off at said droppoff location
 in terms of indices.
 """
-def cost_of_solution(G, car_cycle, dropoff_mapping, FWdict):
+def cost_of_solution(G, car_cycle, dropoff_mapping):
     cost = 0
     message = ''
     dropoffs = dropoff_mapping.keys()
@@ -94,7 +94,7 @@ def cost_of_solution(G, car_cycle, dropoff_mapping, FWdict):
         else:
             driving_cost = 0
         walking_cost = 0
-        shortest = FWdict
+        shortest = dict(nx.floyd_warshall(G))
 
         for drop_location in dropoffs:
             for house in dropoff_mapping[drop_location]:

@@ -8,7 +8,8 @@ import random
 import math
 import time
 
-from DriveTAsHome.student_utils import *
+from student_utils import *
+from output_validator import *
 """
 ======================================================================
   Complete the following function.
@@ -33,7 +34,7 @@ def solve(list_of_locations, list_of_homes, starting_car_location, adjacency_mat
     #     return
     #raise error as a location has a road to self
     coolingRate = 0.97
-    ITERATIONS = 100
+    ITERATIONS = 1000
     temp_original = 10000
 
     FWdict = nx.floyd_warshall(G)
@@ -45,7 +46,7 @@ def solve(list_of_locations, list_of_homes, starting_car_location, adjacency_mat
     list_of_homes = convert_locations_to_indices(list_of_homes, list_of_locations)
     list_of_locations = convert_locations_to_indices(list_of_locations, list_of_locations)
 
-    for size in range(0, len(list_of_locations)):
+    for size in range(0, len(list_of_locations)//2):
         temp = temp_original
 
         tour = get_two_tours(adjacency_matrix, starting_car_location, size)
@@ -63,6 +64,8 @@ def solve(list_of_locations, list_of_homes, starting_car_location, adjacency_mat
             tour = switch_vertex(G, tour)
             tour = switch_edges(G, tour)
             curr_cost = cost_of_cycle(list_of_homes, G, tour, FWdict)
+            # dropoff_mapping = drop_off_given_path(tour, list_of_homes, FWdict)
+            # curr_cost, _ = cost_of_solution(G, tour, dropoff_mapping)
             change_cost = curr_cost - local_best_cost
 
             if change_cost < 0:
@@ -86,8 +89,42 @@ def solve(list_of_locations, list_of_homes, starting_car_location, adjacency_mat
 
 def cost_of_cycle(list_of_homes, G, car_cycle, FWdict):
     dropoff_mapping = drop_off_given_path(car_cycle, list_of_homes, FWdict)
-    ret, msg = cost_of_solution(G, car_cycle, dropoff_mapping, FWdict)
+    ret, msg = cost_of_cycle_helper(G, car_cycle, dropoff_mapping, FWdict)
     return ret
+
+def cost_of_cycle_helper(G, car_cycle, dropoff_mapping, FWdict):
+    cost = 0
+    message = ''
+    dropoffs = dropoff_mapping.keys()
+    if not is_valid_walk(G, car_cycle):
+        message += 'This is not a valid walk for the given graph.\n'
+        cost = 'infinite'
+
+    if not car_cycle[0] == car_cycle[-1]:
+        message += 'The start and end vertices are not the same.\n'
+        cost = 'infinite'
+    if cost != 'infinite':
+        if len(car_cycle) == 1:
+            car_cycle = []
+        else:
+            car_cycle = get_edges_from_path(car_cycle[:-1]) + [(car_cycle[-2], car_cycle[-1])]
+        if len(car_cycle) != 1:
+            driving_cost = sum([G.edges[e]['weight'] for e in car_cycle]) * 2 / 3
+        else:
+            driving_cost = 0
+        walking_cost = 0
+        shortest = FWdict
+
+        for drop_location in dropoffs:
+            for house in dropoff_mapping[drop_location]:
+                walking_cost += shortest[drop_location][house]
+
+        message += f'The driving cost of your solution is {driving_cost}.\n'
+        message += f'The walking cost of your solution is {walking_cost}.\n'
+        cost = driving_cost + walking_cost
+
+    message += f'The total cost of your solution is {cost}.\n'
+    return cost, message
 
 def get_neighbors(v, adj_matrix):
     lst = []
@@ -323,12 +360,26 @@ def solve_from_file(input_file, output_directory, params=[]):
     num_of_locations, num_houses, list_locations, list_houses, starting_car_location, adjacency_matrix = data_parser(input_data)
     car_path, drop_offs = solve(list_locations, list_houses, starting_car_location, adjacency_matrix, params=params)
 
+    #getting the new cost
+    G, _ = adjacency_matrix_to_graph(adjacency_matrix)
+    curr_cost, _ = cost_of_solution(G, car_path, drop_offs)
+    print(curr_cost)
+
     basename, filename = os.path.split(input_file)
     if not os.path.exists(output_directory):
         os.makedirs(output_directory)
     output_file = utils.input_to_output(input_file, output_directory)
 
-    convertToFile(car_path, drop_offs, output_file, list_locations)
+    #checking if new cost is better or not
+    if os.path.isfile(output_file):
+        output_data = utils.read_file(output_file)
+        best_cost, _ = tests(input_data, output_data)
+        if curr_cost < best_cost:
+            convertToFile(car_path, drop_offs, output_file, list_locations)
+        print('Best cost so far: ' + str(best_cost), ', New cost: ' + str(curr_cost))
+    else:
+        convertToFile(car_path, drop_offs, output_file, list_locations)
+        print('New cost: ' + str(curr_cost))
 
 
 def solve_all(input_directory, output_directory, params=[]):

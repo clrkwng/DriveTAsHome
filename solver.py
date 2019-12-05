@@ -7,6 +7,7 @@ import utils
 import random
 import math
 import time
+from copy import deepcopy
 
 from student_utils import *
 from output_validator import *
@@ -34,7 +35,7 @@ def solve(list_of_locations, list_of_homes, starting_car_location, adjacency_mat
     #     return
     #raise error as a location has a road to self
     coolingRate = 0.97
-    ITERATIONS = 1000
+    ITERATIONS = 100
     temp_original = 10000
 
     FWdict = nx.floyd_warshall(G)
@@ -61,11 +62,12 @@ def solve(list_of_locations, list_of_homes, starting_car_location, adjacency_mat
             tour = tour[1]
 
         for i in range(ITERATIONS):
-            tour = switch_vertex(G, tour)
+            local_tour = deepcopy(tour)
+            tour = switch_vertex(G, local_tour)
             tour = switch_edges(G, tour)
             curr_cost = cost_of_cycle(list_of_homes, G, tour, FWdict)
-            # dropoff_mapping = drop_off_given_path(tour, list_of_homes, FWdict)
-            # curr_cost, _ = cost_of_solution(G, tour, dropoff_mapping)
+            #dropoff_mapping = drop_off_given_path(tour, list_of_homes, FWdict)
+            #curr_cost, _ = cost_of_solution(G, tour, dropoff_mapping)
             change_cost = curr_cost - local_best_cost
 
             if change_cost < 0:
@@ -363,7 +365,6 @@ def solve_from_file(input_file, output_directory, params=[]):
     #getting the new cost
     G, _ = adjacency_matrix_to_graph(adjacency_matrix)
     curr_cost, _ = cost_of_solution(G, car_path, drop_offs)
-    print(curr_cost)
 
     basename, filename = os.path.split(input_file)
     if not os.path.exists(output_directory):
